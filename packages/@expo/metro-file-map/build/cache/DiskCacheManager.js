@@ -10,12 +10,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DiskCacheManager = void 0;
-const rootRelativeCacheKeys_1 = __importDefault(require("../lib/rootRelativeCacheKeys"));
 const fs_1 = require("fs");
 const os_1 = require("os");
 const path_1 = __importDefault(require("path"));
 const timers_1 = require("timers");
 const v8_1 = require("v8");
+const rootRelativeCacheKeys_1 = __importDefault(require("../lib/rootRelativeCacheKeys"));
 const debug = require('debug')('Metro:FileMapCache');
 const DEFAULT_PREFIX = 'metro-file-map';
 const DEFAULT_DIRECTORY = (0, os_1.tmpdir)();
@@ -59,6 +59,7 @@ class DiskCacheManager {
     async write(getSnapshot, { changedSinceCacheRead, eventSource, onWriteError }) {
         // Initialise a writer function using a promise queue to ensure writes are
         // sequenced.
+        // eslint-disable-next-line no-multi-assign
         const tryWrite = (this.#tryWrite = () => {
             this.#writePromise = this.#writePromise
                 .then(async () => {
