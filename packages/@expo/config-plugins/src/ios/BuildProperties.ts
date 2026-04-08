@@ -43,19 +43,6 @@ export function createBuildPodfilePropsConfigPlugin<SourceConfigType extends Bui
   return withUnknown;
 }
 
-/**
- * A config-plugin to update `ios/Podfile.properties.json` from the `jsEngine` in expo config
- */
-export const withJsEnginePodfileProps = createBuildPodfilePropsConfigPlugin<ExpoConfig>(
-  [
-    {
-      propName: 'expo.jsEngine',
-      propValueGetter: (config) => config.ios?.jsEngine ?? config.jsEngine ?? 'hermes',
-    },
-  ],
-  'withJsEnginePodfileProps'
-);
-
 export function updateIosBuildPropertiesFromConfig<SourceConfigType extends BuildPropertiesConfig>(
   config: SourceConfigType,
   podfileProperties: Record<string, string>,

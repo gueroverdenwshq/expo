@@ -44,20 +44,6 @@ export function createBuildGradlePropsConfigPlugin<SourceConfigType extends Buil
   return withUnknown;
 }
 
-/**
- * A config-plugin to update `android/gradle.properties` from the `jsEngine` in expo config
- */
-export const withJsEngineGradleProps = createBuildGradlePropsConfigPlugin<ExpoConfig>(
-  [
-    {
-      propName: 'hermesEnabled',
-      propValueGetter: (config) =>
-        ((config.android?.jsEngine ?? config.jsEngine ?? 'hermes') === 'hermes').toString(),
-    },
-  ],
-  'withJsEngineGradleProps'
-);
-
 export function updateAndroidBuildPropertiesFromConfig<
   SourceConfigType extends BuildPropertiesConfig,
 >(
