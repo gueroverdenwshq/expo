@@ -60,6 +60,10 @@ class WorkletRuntime(
       jsiContext = WorkletRuntimeInstaller(this)
         .install(runtimePointer)
 
+      // Install SharedObject.__resolveInWorklet so module classes
+      // can be lazily resolved when SharedObjects are unpacked in worklets.
+      jsiContext.installModuleClasses()
+
       logger.info("✅ JSI interop was installed")
     }
   }

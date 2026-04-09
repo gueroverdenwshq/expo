@@ -10,6 +10,7 @@
 #include "JSReferencesCache.h"
 #include "JNIDeallocator.h"
 #include "ThreadSafeJNIGlobalRef.h"
+#include "decorators/JSDecoratorsBridgingObject.h"
 #include "javaclasses/JSRunnable.h"
 
 #include <fbjni/fbjni.h>
@@ -129,10 +130,28 @@ public:
   std::unique_ptr<JSReferencesCache> jsRegistry;
   jni::global_ref<JNIDeallocator::javaobject> jniDeallocator;
 
+  // Holds module class decorators alive so the MethodMetadata weak_ptrs
+  // captured by prototype sync functions remain valid.
+  std::vector<std::unique_ptr<JSDecorator>> moduleClassDecorators;
+
   void registerClass(jni::local_ref<jclass> native,
                      jni::local_ref<JavaScriptObject::javaobject> jsClass);
 
   jni::local_ref<JavaScriptObject::javaobject> getJavascriptClass(jni::local_ref<jclass> native);
+
+  /**
+   * Installs `SharedObject.__resolveInWorklet` in this runtime.
+   * Classes are exported lazily per-type on first use from Kotlin.
+   */
+  void installModuleClasses();
+
+  /**
+   * Applies class decorators in this runtime and keeps them alive
+   * so MethodMetadata weak_ptrs remain valid.
+   */
+  void decorateWithClasses(
+    jni::alias_ref<jni::HybridClass<JSDecoratorsBridgingObject>::javaobject> classesDecorator
+  );
 
   void prepareForDeallocation() noexcept;
 

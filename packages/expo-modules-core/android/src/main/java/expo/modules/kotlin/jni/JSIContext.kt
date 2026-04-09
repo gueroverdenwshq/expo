@@ -3,6 +3,7 @@ package expo.modules.kotlin.jni
 import com.facebook.jni.HybridData
 import expo.modules.core.interfaces.DoNotStrip
 import expo.modules.kotlin.exception.JavaScriptEvaluateException
+import expo.modules.kotlin.jni.decorators.JSDecoratorsBridgingObject
 import expo.modules.kotlin.runtime.Runtime
 import expo.modules.kotlin.sharedobjects.SharedObject
 import expo.modules.kotlin.sharedobjects.SharedObjectId
@@ -54,6 +55,55 @@ class JSIContext @DoNotStrip internal constructor(
   external fun drainJSEventLoop()
 
   external fun setNativeStateForSharedObject(id: Int, js: JavaScriptObject)
+
+  /**
+   * Installs `__resolveInWorklet` on SharedObject in the worklet runtime.
+   */
+  external fun installModuleClasses()
+
+  /**
+   * Applies class decorators in this runtime and keeps them alive
+   * so MethodMetadata weak_ptrs captured by prototype sync functions remain valid.
+   */
+  external fun decorateWithClasses(classesDecorator: JSDecoratorsBridgingObject)
+
+  /**
+   * Called from C++ — returns the Java class of a SharedObject by its ID.
+   * Navigates to the main runtime's SharedObjectRegistry since shared objects are created there.
+   * Equivalent to iOS's `sharedObjectRegistry.get(objectId)` + `type(of:)`.
+   */
+  @Suppress("unused")
+  @DoNotStrip
+  fun getNativeSharedObjectClass(objectId: Int): Class<*>? {
+    val appContext = runtimeHolder.get()?.appContext ?: return null
+    val mainRegistry = appContext.runtime.sharedObjectRegistry
+    val nativeObject = mainRegistry.toNativeObjectOrNull(SharedObjectId(objectId))
+    return nativeObject?.javaClass
+  }
+
+  /**
+   * Called from C++ — lazily exports a single class to this (worklet) runtime.
+   * Finds the ClassDefinitionData, builds the prototype, and registers it in classRegistry.
+   * Equivalent to iOS's `findClassDefinition(for:)` + `buildPrototype(in:)`.
+   */
+  @Suppress("unused")
+  @DoNotStrip
+  fun exportClassToWorklet(nativeClass: Class<*>) {
+    val runtime = runtimeHolder.get() ?: return
+    val appContext = runtime.appContext ?: return
+
+    val classDefinition = appContext.registry
+      .asSequence()
+      .flatMap { it.definition.classData }
+      .firstOrNull { it.constructor.ownerType?.kClass?.java == nativeClass }
+      ?: return
+
+    val decorator = JSDecoratorsBridgingObject(runtime.deallocator)
+    with(decorator) {
+      classDefinition.exportClass(appContext, runtime)
+    }
+    decorateWithClasses(decorator)
+  }
 
   /**
    * Returns a `JavaScriptModuleObject` that is a bridge between [expo.modules.kotlin.modules.Module]
