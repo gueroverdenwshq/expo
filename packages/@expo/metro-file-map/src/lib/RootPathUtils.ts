@@ -8,6 +8,8 @@
 import invariant from 'invariant';
 import path from 'path';
 
+import normalizePathSeparatorsToSystem from './normalizePathSeparatorsToSystem';
+
 /**
  * This module provides path utility functions - similar to `node:path` -
  * optimised for Metro's use case (many paths, few roots) under assumptions
@@ -160,6 +162,7 @@ export class RootPathUtils {
   }
 
   resolveSymlinkToNormal(symlinkNormalPath: string, readlinkResult: string): string {
+    readlinkResult = normalizePathSeparatorsToSystem(readlinkResult);
     if (path.isAbsolute(readlinkResult)) {
       return this.absoluteToNormal(readlinkResult);
     }
